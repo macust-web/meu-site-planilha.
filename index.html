@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Planilha</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Meu Visualizador de Planilhas</h1>
+
+    <div class="container">
+        <h2>1. Carregar sua Planilha</h2>
+        <p>Selecione um arquivo Excel (.xlsx) do seu computador.</p>
+        <input type="file" id="upload-excel" accept=".xlsx, .xls">
+
+        <h2>2. Informação Editável (Salva na Nuvem)</h2>
+        <p>Digite uma anotação que ficará salva para todos.</p>
+        <textarea id="campo-editavel" rows="4" placeholder="Digite sua anotação aqui..."></textarea>
+        <button id="salvar-info">Salvar Anotação</button>
+        <p id="status-salvamento"></p>
+
+        <h2>3. Dados da Planilha</h2>
+        <p>Os dados da sua planilha aparecerão aqui abaixo.</p>
+        <div id="tabela-container"></div>
+    </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
