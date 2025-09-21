@@ -13,7 +13,7 @@ h1, h2 {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 95%; /* Aumentado para dar mais espaço para a tabela */
     margin: auto;
     background: #fff;
     padding: 20px;
@@ -26,30 +26,9 @@ input[type="file"] {
     margin-bottom: 20px;
 }
 
-textarea {
-    width: 95%;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    margin-bottom: 10px;
-}
-
-button {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
 #tabela-container {
     margin-top: 20px;
-    overflow-x: auto; /* Adiciona barra de rolagem se a tabela for muito larga */
+    overflow-x: auto;
 }
 
 table {
@@ -61,8 +40,32 @@ th, td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
+    vertical-align: middle; /* Alinha o conteúdo verticalmente */
 }
 
 th {
     background-color: #f2f2f2;
+}
+
+/* Estilos para os novos campos na tabela */
+.anotacao-input {
+    width: 90%;
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.salvar-anotacao-btn {
+    background-color: #28a745; /* Verde */
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+    display: block;
+}
+
+.salvar-anotacao-btn:hover {
+    background-color: #218838;
 }

@@ -1,3 +1,4 @@
+// Cole aqui as suas credenciais do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAcqvJ0pkjadnI_gkRmemnYyQYGzeah1UM",
   authDomain: "meu-site-planilha-12345.firebaseapp.com",
@@ -7,71 +8,132 @@ const firebaseConfig = {
   appId: "1:899557528243:web:bffe219d6ebfb0b8f396c6"
 };
 
-// =================================================================
-// O RESTANTE DO CÓDIGO (não precisa alterar )
-// =================================================================
-
 // Inicializa o Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// --- LÓGICA PARA O CAMPO EDITÁVEL (FIREBASE) ---
+// --- LÓGICA PARA LER A PLANILHA ---
+document.getElementById('upload-excel').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
 
-// Referência ao nosso documento no banco de dados
-const docRef = db.collection('anotacoes').doc('principal');
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        displayTable(json);
+    };
 
-// Elementos da página
-const campoEditavel = document.getElementById('campo-editavel');
-const botaoSalvar = document.getElementById('salvar-info');
-const statusSalvamento = document.getElementById('status-salvamento');
+    reader.readAsArrayBuffer(file);
+});
 
-// Função para salvar a anotação no Firebase
-botaoSalvar.addEventListener('click', () => {
-  const textoParaSalvar = campoEditavel.value;
-  statusSalvamento.textContent = 'Salvando...';
+// --- LÓGICA PARA EXIBIR A TABELA ---
+async function displayTable(data) {
+    const container = document.getElementById('tabela-container');
+    if (data.length === 0) {
+        container.innerHTML = '<p>A planilha está vazia.</p>';
+        return;
+    }
 
-  docRef.set({ texto: textoParaSalvar })
+    const table = document.createElement('table');
+    
+    // Cria o cabeçalho da tabela
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    data[0].forEach(headerText => {
+        const th = document.createElement('th');
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+    // Adiciona a nova coluna de anotações no cabeçalho
+    const thAnotacao = document.createElement('th');
+    thAnotacao.textContent = 'Anotação (Salva na Nuvem)';
+    headerRow.appendChild(thAnotacao);
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Cria o corpo da tabela
+    const tbody = document.createElement('tbody');
+    for (let i = 1; i < data.length; i++) {
+        const rowData = data[i];
+        const tr = document.createElement('tr');
+
+        // Cria um ID único para cada linha (usando o conteúdo da primeira célula)
+        // IMPORTANTE: Assumindo que a primeira coluna tem um valor único por linha
+        const rowId = String(rowData[0] || `linha-${i}`).replace(/[^a-zA-Z0-9]/g, '-');
+
+        rowData.forEach(cellData => {
+            const td = document.createElement('td');
+            td.textContent = cellData;
+            tr.appendChild(td);
+        });
+
+        // Adiciona a célula da anotação
+        const tdAnotacao = document.createElement('td');
+        
+        const anotacaoInput = document.createElement('input');
+        anotacaoInput.type = 'text';
+        anotacaoInput.className = 'anotacao-input';
+        anotacaoInput.id = `anotacao-${rowId}`;
+        anotacaoInput.placeholder = 'Digite a anotação...';
+
+        const saveButton = document.createElement('button');
+        saveButton.textContent = 'Salvar';
+        saveButton.className = 'salvar-anotacao-btn';
+        saveButton.onclick = function() {
+            salvarAnotacao(rowId);
+        };
+
+        tdAnotacao.appendChild(anotacaoInput);
+        tdAnotacao.appendChild(saveButton);
+        tr.appendChild(tdAnotacao);
+        tbody.appendChild(tr);
+
+        // Carrega a anotação existente para esta linha
+        carregarAnotacao(rowId);
+    }
+    table.appendChild(tbody);
+
+    container.innerHTML = ''; // Limpa o container
+    container.appendChild(table);
+}
+
+// --- FUNÇÕES DO FIREBASE ---
+
+// Função para salvar a anotação de uma linha específica
+function salvarAnotacao(rowId) {
+    const input = document.getElementById(`anotacao-${rowId}`);
+    const texto = input.value;
+
+    // Salva no Firestore usando o ID da linha como ID do documento
+    db.collection('anotacoes').doc(rowId).set({
+        texto: texto
+    })
     .then(() => {
-      statusSalvamento.textContent = 'Salvo com sucesso!';
-      setTimeout(() => { statusSalvamento.textContent = ''; }, 3000); // Limpa a mensagem depois de 3 segundos
+        console.log(`Anotação para ${rowId} salva com sucesso!`);
+        input.style.backgroundColor = '#d4edda'; // Feedback visual de sucesso
+        setTimeout(() => { input.style.backgroundColor = ''; }, 2000);
     })
     .catch((error) => {
-      console.error("Erro ao salvar: ", error);
-      statusSalvamento.textContent = 'Erro ao salvar.';
+        console.error("Erro ao salvar anotação: ", error);
+        input.style.backgroundColor = '#f8d7da'; // Feedback visual de erro
     });
-});
+}
 
-// Função para carregar a anotação do Firebase assim que a página abre
-docRef.onSnapshot((doc) => {
-  if (doc.exists) {
-    campoEditavel.value = doc.data().texto;
-  } else {
-    console.log("Nenhum documento encontrado!");
-  }
-});
-
-// --- LÓGICA PARA O UPLOAD DA PLANILHA (SHEETJS) ---
-
-const uploadExcel = document.getElementById('upload-excel');
-
-uploadExcel.addEventListener('change', (event) => {
-  const file = event.target.files[0];
-  const reader = new FileReader();
-
-  reader.onload = (e) => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
-
-    // Pega a primeira planilha do arquivo
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-
-    // Converte a planilha para um formato de tabela HTML
-    const htmlTable = XLSX.utils.sheet_to_html(worksheet);
-
-    // Mostra a tabela na página
-    document.getElementById('tabela-container').innerHTML = htmlTable;
-  };
-
-  reader.readAsArrayBuffer(file);
-});
+// Função para carregar a anotação de uma linha específica
+function carregarAnotacao(rowId) {
+    const input = document.getElementById(`anotacao-${rowId}`);
+    
+    db.collection('anotacoes').doc(rowId).get().then((doc) => {
+        if (doc.exists) {
+            input.value = doc.data().texto;
+        } else {
+            console.log(`Nenhuma anotação encontrada para ${rowId}`);
+        }
+    }).catch((error) => {
+        console.error("Erro ao carregar anotação: ", error);
+    });
+}
